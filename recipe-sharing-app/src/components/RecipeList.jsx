@@ -2,6 +2,7 @@
 import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import useRecipeStore from "../store/recipeStore";
+import FavoriteButton from "./FavoriteButton";
 
 const RecipeList = () => {
   const { filteredRecipes, searchTerm, initializeFilter, recipes } =
@@ -46,11 +47,7 @@ const RecipeList = () => {
     boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
     transition: "transform 0.3s ease, box-shadow 0.3s ease",
     cursor: "pointer",
-  };
-
-  const recipeCardHoverStyle = {
-    transform: "translateY(-5px)",
-    boxShadow: "0 8px 15px rgba(0,0,0,0.2)",
+    position: "relative",
   };
 
   const titleStyle = {
@@ -88,6 +85,22 @@ const RecipeList = () => {
     margin: "0.2rem",
     borderRadius: "12px",
     fontSize: "0.75rem",
+  };
+
+  const favoriteButtonContainerStyle = {
+    position: "absolute",
+    top: "1rem",
+    right: "1rem",
+  };
+
+  const cuisineBadgeStyle = {
+    display: "inline-block",
+    backgroundColor: "#e67e22",
+    color: "white",
+    padding: "0.2rem 0.8rem",
+    borderRadius: "15px",
+    fontSize: "0.75rem",
+    marginBottom: "1rem",
   };
 
   const noResultsStyle = {
@@ -162,9 +175,17 @@ const RecipeList = () => {
                   e.currentTarget.style.boxShadow = "0 4px 6px rgba(0,0,0,0.1)";
                 }}
               >
+                <div style={favoriteButtonContainerStyle}>
+                  <FavoriteButton recipeId={recipe.id} size="small" />
+                </div>
+
                 <h3 style={titleStyle}>
                   {highlightText(recipe.title, searchTerm)}
                 </h3>
+
+                {recipe.cuisine && (
+                  <span style={cuisineBadgeStyle}>{recipe.cuisine}</span>
+                )}
 
                 {recipe.description && (
                   <p style={descriptionStyle}>
@@ -175,6 +196,7 @@ const RecipeList = () => {
                 <div style={detailsStyle}>
                   <span>⏱️ Prep: {recipe.prepTime || "N/A"} min</span>
                   <span>🍳 Cook: {recipe.cookTime || "N/A"} min</span>
+                  <span>📊 {recipe.difficulty || "Medium"}</span>
                 </div>
 
                 <div style={ingredientsStyle}>
