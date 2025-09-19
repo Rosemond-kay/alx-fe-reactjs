@@ -1,6 +1,6 @@
 // src/components/Search.jsx
 import { useState } from "react";
-import { searchUsers } from "../services/githubService";
+import { searchUsers, fetchUserData } from "../services/githubService";
 
 const Search = () => {
   // State for search criteria
@@ -74,29 +74,43 @@ const Search = () => {
     }
 
     try {
-      const data = await searchUsers({
-        username,
-        location,
-        minRepos,
-        language,
-        page,
-      });
-
-      if (append) {
-        setUsers((prev) => [...prev, ...data.items]);
+      // If only username is provided, use fetchUserData for single user search
+      if (username && !location && !minRepos && !language) {
+        const userData = await fetchUserData(username);
+        setUsers([userData]);
+        setTotalCount(1);
+        setCurrentPage(1);
+        setHasMore(false);
       } else {
-        setUsers(data.items);
+        // Use advanced search for multiple criteria
+        const data = await searchUsers({
+          username,
+          location,
+          minRepos,
+          language,
+          page,
+        });
+
+        if (append) {
+          setUsers((prev) => [...prev, ...data.items]);
+        } else {
+          setUsers(data.items);
+        }
+
+        setTotalCount(data.total_count);
+        setCurrentPage(page);
+        setHasMore(data.items.length === 30 && page * 30 < data.total_count);
       }
 
-      setTotalCount(data.total_count);
-      setCurrentPage(page);
-      setHasMore(data.items.length === 30 && page * 30 < data.total_count);
-
-      if (data.items.length === 0 && !append) {
+      if (users.length === 0 && !append) {
         setError("No users found matching your criteria");
       }
     } catch (err) {
-      setError("Failed to search users. Please try again.");
+      if (err.message === "User not found") {
+        setError("Looks like we cant find the user");
+      } else {
+        setError("Failed to search users. Please try again.");
+      }
       console.error("Search error:", err);
     } finally {
       setLoading(false);
