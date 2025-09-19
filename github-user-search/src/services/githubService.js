@@ -1,28 +1,29 @@
 // src/services/githubService.js
 import axios from "axios";
 
-// GitHub API configuration
+// GitHub API base URL
 const GITHUB_API_BASE_URL = "https://api.github.com";
-const GITHUB_TOKEN = import.meta.env.VITE_GITHUB_TOKEN;
 
 // Create axios instance with base configuration
 const githubAPI = axios.create({
   baseURL: GITHUB_API_BASE_URL,
   headers: {
     Accept: "application/vnd.github.v3+json",
-    "User-Agent": "GitHub-User-Search-App",
   },
 });
 
-// Add authentication token if available
-if (GITHUB_TOKEN) {
-  githubAPI.defaults.headers.Authorization = `token ${GITHUB_TOKEN}`;
+// Add GitHub token if available in environment variables
+if (import.meta.env.VITE_GITHUB_TOKEN) {
+  githubAPI.defaults.headers.Authorization = `token ${
+    import.meta.env.VITE_GITHUB_TOKEN
+  }`;
 }
 
 /**
- * Original fetchUserData function for backward compatibility
+ * Fetch user data from GitHub API (original function)
  * @param {string} username - GitHub username to search for
  * @returns {Promise<Object>} User data object
+ * @throws {Error} When user is not found or API request fails
  */
 export const fetchUserData = async (username) => {
   try {
@@ -37,122 +38,131 @@ export const fetchUserData = async (username) => {
 };
 
 /**
- * Advanced search function for GitHub users
+ * Advanced search for GitHub users with multiple criteria
  * @param {Object} searchParams - Search parameters object
  * @param {string} searchParams.username - Username to search for
- * @param {string} searchParams.location - Location to filter by
+ * @param {string} searchParams.location - User location
  * @param {string} searchParams.minRepos - Minimum number of repositories
- * @param {string} searchParams.language - Programming language to filter by
- * @param {number} page - Page number for pagination (default: 1)
- * @param {number} perPage - Number of results per page (default: 30, max: 100)
- * @returns {Promise<Object>} Search results object with items array and metadata
+ * @param {string} searchParams.language - Programming language
+ * @param {number} searchParams.page - Page number for pagination (default: 1)
+ * @param {number} searchParams.perPage - Results per page (default: 30, max: 100)
+ * @returns {Promise<Object>} Search results object with items array and pagination info
+ * @throws {Error} When search fails
  */
-export const searchUsersAdvanced = async (
-  searchParams,
+export const searchUsers = async ({
+  username = "",
+  location = "",
+  minRepos = "",
+  language = "",
   page = 1,
-  perPage = 30
-) => {
+  perPage = 30,
+}) => {
   try {
-    // Build the search query
+    // Build search query
     const queryParts = [];
 
     // Add username search
-    if (searchParams.username && searchParams.username.trim()) {
-      queryParts.push(searchParams.username.trim());
+    if (username.trim()) {
+      // Search in username and full name
+      queryParts.push(`${username} in:login`);
     }
 
     // Add location filter
-    if (searchParams.location && searchParams.location.trim()) {
-      queryParts.push(`location:"${searchParams.location.trim()}"`);
+    if (location.trim()) {
+      queryParts.push(`location:"${location}"`);
     }
 
     // Add minimum repositories filter
-    if (searchParams.minRepos && parseInt(searchParams.minRepos) > 0) {
-      queryParts.push(`repos:>=${parseInt(searchParams.minRepos)}`);
+    if (minRepos && !isNaN(minRepos)) {
+      queryParts.push(`repos:>=${minRepos}`);
     }
 
-    // Add language filter
-    if (searchParams.language && searchParams.language.trim()) {
-      queryParts.push(`language:"${searchParams.language.trim()}"`);
+    // Add programming language filter
+    if (language.trim()) {
+      queryParts.push(`language:"${language}"`);
     }
 
-    // Join all query parts
-    const query = queryParts.join(" ");
+    // If no specific criteria provided, default to searching all users
+    const query = queryParts.length > 0 ? queryParts.join(" ") : "type:user";
 
-    if (!query) {
-      throw new Error("At least one search parameter is required");
-    }
-
-    // Make the API request
+    // Make API request
     const response = await githubAPI.get("/search/users", {
       params: {
         q: query,
         page: page,
         per_page: Math.min(perPage, 100), // GitHub API max is 100
-        sort: "repositories", // Sort by repository count
+        sort: "followers", // Sort by followers for better relevance
         order: "desc",
       },
     });
 
-    return response.data;
+    // Fetch additional details for each user (location, public_repos, followers)
+    const usersWithDetails = await Promise.all(
+      response.data.items.map(async (user) => {
+        try {
+          const detailedUser = await githubAPI.get(`/users/${user.login}`);
+          return {
+            ...user,
+            location: detailedUser.data.location,
+            public_repos: detailedUser.data.public_repos,
+            followers: detailedUser.data.followers,
+            following: detailedUser.data.following,
+            bio: detailedUser.data.bio,
+            blog: detailedUser.data.blog,
+            company: detailedUser.data.company,
+            created_at: detailedUser.data.created_at,
+            updated_at: detailedUser.data.updated_at,
+          };
+        } catch (error) {
+          // If detailed fetch fails, return basic user info
+          console.warn(`Failed to fetch details for user ${user.login}`);
+          return user;
+        }
+      })
+    );
+
+    return {
+      ...response.data,
+      items: usersWithDetails,
+    };
   } catch (error) {
-    console.error("Advanced search error:", error);
+    console.error("Error searching users:", error);
 
     if (error.response) {
       switch (error.response.status) {
+        case 403:
+          throw new Error("API rate limit exceeded. Please try again later.");
         case 422:
           throw new Error(
             "Invalid search parameters. Please check your input."
           );
-        case 403:
-          throw new Error("API rate limit exceeded. Please try again later.");
         case 503:
-          throw new Error(
-            "GitHub service is temporarily unavailable. Please try again later."
-          );
+          throw new Error("GitHub API is temporarily unavailable.");
         default:
-          throw new Error(
-            `Search failed: ${error.response.data?.message || "Unknown error"}`
-          );
+          throw new Error(`Search failed: ${error.response.status}`);
       }
     }
 
-    throw new Error(
-      "Network error. Please check your connection and try again."
-    );
-  }
-};
-
-/**
- * Get detailed user information including additional fields
- * @param {string} username - GitHub username
- * @returns {Promise<Object>} Detailed user data
- */
-export const getUserDetails = async (username) => {
-  try {
-    const response = await githubAPI.get(`/users/${username}`);
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching user details:", error);
-    throw new Error("Failed to fetch user details");
+    throw new Error("Failed to search users. Please check your connection.");
   }
 };
 
 /**
  * Get user repositories
  * @param {string} username - GitHub username
- * @param {number} page - Page number (default: 1)
- * @param {number} perPage - Results per page (default: 30)
+ * @param {number} page - Page number for pagination
+ * @param {number} perPage - Results per page
  * @returns {Promise<Array>} Array of repository objects
+ * @throws {Error} When fetching repositories fails
  */
 export const getUserRepositories = async (username, page = 1, perPage = 30) => {
   try {
     const response = await githubAPI.get(`/users/${username}/repos`, {
       params: {
-        page: page,
+        page,
         per_page: Math.min(perPage, 100),
         sort: "updated",
-        type: "all",
+        direction: "desc",
       },
     });
     return response.data;
@@ -163,37 +173,90 @@ export const getUserRepositories = async (username, page = 1, perPage = 30) => {
 };
 
 /**
- * Search repositories by various criteria
+ * Get user followers
+ * @param {string} username - GitHub username
+ * @param {number} page - Page number for pagination
+ * @param {number} perPage - Results per page
+ * @returns {Promise<Array>} Array of follower objects
+ * @throws {Error} When fetching followers fails
+ */
+export const getUserFollowers = async (username, page = 1, perPage = 30) => {
+  try {
+    const response = await githubAPI.get(`/users/${username}/followers`, {
+      params: {
+        page,
+        per_page: Math.min(perPage, 100),
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching user followers:", error);
+    throw new Error("Failed to fetch user followers");
+  }
+};
+
+/**
+ * Get user following
+ * @param {string} username - GitHub username
+ * @param {number} page - Page number for pagination
+ * @param {number} perPage - Results per page
+ * @returns {Promise<Array>} Array of following objects
+ * @throws {Error} When fetching following fails
+ */
+export const getUserFollowing = async (username, page = 1, perPage = 30) => {
+  try {
+    const response = await githubAPI.get(`/users/${username}/following`, {
+      params: {
+        page,
+        per_page: Math.min(perPage, 100),
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching user following:", error);
+    throw new Error("Failed to fetch user following");
+  }
+};
+
+/**
+ * Search repositories with advanced criteria
  * @param {Object} searchParams - Search parameters
  * @param {string} searchParams.query - Repository search query
  * @param {string} searchParams.language - Programming language
- * @param {string} searchParams.user - Username to filter by
- * @param {number} page - Page number
+ * @param {number} searchParams.minStars - Minimum stars
+ * @param {number} searchParams.page - Page number
  * @returns {Promise<Object>} Repository search results
  */
-export const searchRepositories = async (searchParams, page = 1) => {
+export const searchRepositories = async ({
+  query = "",
+  language = "",
+  minStars = "",
+  page = 1,
+  perPage = 30,
+}) => {
   try {
     const queryParts = [];
 
-    if (searchParams.query) {
-      queryParts.push(searchParams.query);
+    if (query.trim()) {
+      queryParts.push(query);
     }
 
-    if (searchParams.language) {
-      queryParts.push(`language:"${searchParams.language}"`);
+    if (language.trim()) {
+      queryParts.push(`language:"${language}"`);
     }
 
-    if (searchParams.user) {
-      queryParts.push(`user:${searchParams.user}`);
+    if (minStars && !isNaN(minStars)) {
+      queryParts.push(`stars:>=${minStars}`);
     }
 
-    const query = queryParts.join(" ");
+    const searchQuery =
+      queryParts.length > 0 ? queryParts.join(" ") : "stars:>0";
 
     const response = await githubAPI.get("/search/repositories", {
       params: {
-        q: query,
-        page: page,
-        per_page: 30,
+        q: searchQuery,
+        page,
+        per_page: Math.min(perPage, 100),
         sort: "stars",
         order: "desc",
       },
@@ -201,72 +264,7 @@ export const searchRepositories = async (searchParams, page = 1) => {
 
     return response.data;
   } catch (error) {
-    console.error("Repository search error:", error);
+    console.error("Error searching repositories:", error);
     throw new Error("Failed to search repositories");
   }
-};
-
-/**
- * Get GitHub API rate limit status
- * @returns {Promise<Object>} Rate limit information
- */
-export const getRateLimit = async () => {
-  try {
-    const response = await githubAPI.get("/rate_limit");
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching rate limit:", error);
-    throw new Error("Failed to fetch rate limit information");
-  }
-};
-
-/**
- * Build search query string from parameters (utility function)
- * @param {Object} params - Search parameters
- * @returns {string} Formatted search query
- */
-export const buildSearchQuery = (params) => {
-  const queryParts = [];
-
-  Object.entries(params).forEach(([key, value]) => {
-    if (value && value.toString().trim()) {
-      switch (key) {
-        case "username":
-          queryParts.push(value.trim());
-          break;
-        case "location":
-          queryParts.push(`location:"${value.trim()}"`);
-          break;
-        case "minRepos":
-          if (parseInt(value) > 0) {
-            queryParts.push(`repos:>=${parseInt(value)}`);
-          }
-          break;
-        case "language":
-          queryParts.push(`language:"${value.trim()}"`);
-          break;
-        case "followers":
-          if (parseInt(value) > 0) {
-            queryParts.push(`followers:>=${parseInt(value)}`);
-          }
-          break;
-        case "created":
-          queryParts.push(`created:${value}`);
-          break;
-      }
-    }
-  });
-
-  return queryParts.join(" ");
-};
-
-// Export default for backward compatibility
-export default {
-  fetchUserData,
-  searchUsersAdvanced,
-  getUserDetails,
-  getUserRepositories,
-  searchRepositories,
-  getRateLimit,
-  buildSearchQuery,
 };
