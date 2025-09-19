@@ -39,6 +39,7 @@ export const fetchUserData = async (username) => {
 
 /**
  * Advanced search for GitHub users with multiple criteria
+ * Uses GitHub Search API: https://api.github.com/search/users?q={query}
  * @param {Object} searchParams - Search parameters object
  * @param {string} searchParams.username - Username to search for
  * @param {string} searchParams.location - User location
@@ -85,7 +86,8 @@ export const searchUsers = async ({
     // If no specific criteria provided, default to searching all users
     const query = queryParts.length > 0 ? queryParts.join(" ") : "type:user";
 
-    // Make API request
+    // Make API request to GitHub Search API
+    // Using the endpoint: https://api.github.com/search/users?q={query}
     const response = await githubAPI.get("/search/users", {
       params: {
         q: query,
