@@ -1,53 +1,29 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+
 function AddRecipeForm() {
-  const [formData, setFormData] = useState({
-    title: "",
-    summary: "",
-    ingredients: "",
-    instructions: "",
-  });
+  const [title, setTitle] = useState("");
+  const [ingredients, setIngredients] = useState("");
+  const [steps, setSteps] = useState("");
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
-
-  // Handle input changes
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-
-    // Clear error for this field when user starts typing
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: "",
-      }));
-    }
-  };
 
   // Validate form
   const validateForm = () => {
     const newErrors = {};
 
     // Check if title is empty
-    if (!formData.title.trim()) {
+    if (!title.trim()) {
       newErrors.title = "Recipe title is required";
     }
 
-    // Check if summary is empty
-    if (!formData.summary.trim()) {
-      newErrors.summary = "Recipe summary is required";
-    }
-
     // Check if ingredients is empty and has at least 2 items
-    if (!formData.ingredients.trim()) {
+    if (!ingredients.trim()) {
       newErrors.ingredients = "Ingredients are required";
     } else {
-      const ingredientsList = formData.ingredients
+      const ingredientsList = ingredients
         .split("\n")
         .filter((item) => item.trim() !== "");
       if (ingredientsList.length < 2) {
@@ -56,9 +32,9 @@ function AddRecipeForm() {
       }
     }
 
-    // Check if instructions is empty
-    if (!formData.instructions.trim()) {
-      newErrors.instructions = "Cooking instructions are required";
+    // Check if steps is empty
+    if (!steps.trim()) {
+      newErrors.steps = "Preparation steps are required";
     }
 
     setErrors(newErrors);
@@ -74,17 +50,15 @@ function AddRecipeForm() {
 
       // Simulate API call
       setTimeout(() => {
-        console.log("Recipe submitted:", formData);
+        console.log("Recipe submitted:", { title, ingredients, steps });
         setIsSubmitting(false);
         setSubmitSuccess(true);
 
         // Reset form after successful submission
-        setFormData({
-          title: "",
-          summary: "",
-          ingredients: "",
-          instructions: "",
-        });
+        setTitle("");
+        setIngredients("");
+        setSteps("");
+        setErrors({});
 
         // Hide success message after 3 seconds
         setTimeout(() => {
@@ -116,6 +90,7 @@ function AddRecipeForm() {
         </svg>
         Back to Home
       </Link>
+
       <h1 className="text-4xl font-bold text-center mb-8 text-gray-800">
         Add New Recipe
       </h1>
@@ -150,8 +125,13 @@ function AddRecipeForm() {
             type="text"
             id="title"
             name="title"
-            value={formData.title}
-            onChange={handleChange}
+            value={title}
+            onChange={(e) => {
+              setTitle(e.target.value);
+              if (errors.title) {
+                setErrors((prev) => ({ ...prev, title: "" }));
+              }
+            }}
             className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition ${
               errors.title ? "border-red-500" : "border-gray-300"
             }`}
@@ -159,30 +139,6 @@ function AddRecipeForm() {
           />
           {errors.title && (
             <p className="text-red-500 text-sm mt-1">{errors.title}</p>
-          )}
-        </div>
-
-        {/* Recipe Summary */}
-        <div className="mb-6">
-          <label
-            htmlFor="summary"
-            className="block text-gray-700 font-semibold mb-2"
-          >
-            Recipe Summary <span className="text-red-500">*</span>
-          </label>
-          <textarea
-            id="summary"
-            name="summary"
-            value={formData.summary}
-            onChange={handleChange}
-            rows="3"
-            className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition resize-none ${
-              errors.summary ? "border-red-500" : "border-gray-300"
-            }`}
-            placeholder="Brief description of your recipe..."
-          />
-          {errors.summary && (
-            <p className="text-red-500 text-sm mt-1">{errors.summary}</p>
           )}
         </div>
 
@@ -197,8 +153,13 @@ function AddRecipeForm() {
           <textarea
             id="ingredients"
             name="ingredients"
-            value={formData.ingredients}
-            onChange={handleChange}
+            value={ingredients}
+            onChange={(e) => {
+              setIngredients(e.target.value);
+              if (errors.ingredients) {
+                setErrors((prev) => ({ ...prev, ingredients: "" }));
+              }
+            }}
             rows="6"
             className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition resize-none ${
               errors.ingredients ? "border-red-500" : "border-gray-300"
@@ -216,24 +177,29 @@ function AddRecipeForm() {
         {/* Preparation Steps */}
         <div className="mb-6">
           <label
-            htmlFor="instructions"
+            htmlFor="steps"
             className="block text-gray-700 font-semibold mb-2"
           >
             Preparation Steps <span className="text-red-500">*</span>
           </label>
           <textarea
-            id="instructions"
-            name="instructions"
-            value={formData.instructions}
-            onChange={handleChange}
+            id="steps"
+            name="steps"
+            value={steps}
+            onChange={(e) => {
+              setSteps(e.target.value);
+              if (errors.steps) {
+                setErrors((prev) => ({ ...prev, steps: "" }));
+              }
+            }}
             rows="8"
             className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition resize-none ${
-              errors.instructions ? "border-red-500" : "border-gray-300"
+              errors.steps ? "border-red-500" : "border-gray-300"
             }`}
             placeholder="Enter each step on a new line:&#10;1. Preheat oven to 350°F&#10;2. Mix dry ingredients&#10;3. Add wet ingredients"
           />
-          {errors.instructions && (
-            <p className="text-red-500 text-sm mt-1">{errors.instructions}</p>
+          {errors.steps && (
+            <p className="text-red-500 text-sm mt-1">{errors.steps}</p>
           )}
           <p className="text-gray-500 text-sm mt-1">
             Enter each step on a new line
@@ -277,12 +243,9 @@ function AddRecipeForm() {
           <button
             type="button"
             onClick={() => {
-              setFormData({
-                title: "",
-                summary: "",
-                ingredients: "",
-                instructions: "",
-              });
+              setTitle("");
+              setIngredients("");
+              setSteps("");
               setErrors({});
             }}
             className="flex-1 sm:flex-initial bg-gray-300 text-gray-700 font-semibold py-3 px-6 rounded-lg hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition duration-200"
