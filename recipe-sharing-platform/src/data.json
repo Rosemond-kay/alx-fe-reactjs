@@ -3,12 +3,105 @@
     "id": 1,
     "title": "Spaghetti Carbonara",
     "summary": "A classic Italian pasta dish with eggs, cheese, bacon, and black pepper.",
-    "image": "https://via.placeholder.com/150"
+    "image": "https://via.placeholder.com/150",
+    "ingredients": [
+      "400g spaghetti",
+      "200g pancetta or bacon",
+      "4 large eggs",
+      "100g Parmesan cheese, grated",
+      "2 cloves garlic, minced",
+      "Salt and black pepper to taste",
+      "Fresh parsley for garnish"
+    ],
+    "instructions": [
+      "Bring a large pot of salted water to boil and cook spaghetti according to package directions.",
+      "While pasta cooks, fry pancetta in a large skillet until crispy.",
+      "In a bowl, whisk together eggs and Parmesan cheese.",
+      "Drain pasta, reserving 1 cup of pasta water.",
+      "Add hot pasta to the skillet with pancetta.",
+      "Remove from heat and quickly stir in egg mixture, adding pasta water to create a creamy sauce.",
+      "Season with black pepper and garnish with parsley. Serve immediately."
+    ]
   },
   {
     "id": 2,
     "title": "Chicken Tikka Masala",
     "summary": "Chunks of grilled chicken (tikka) cooked in a smooth buttery & creamy tomato based gravy.",
-    "image": "https://via.placeholder.com/150"
+    "image": "https://via.placeholder.com/150",
+    "ingredients": [
+      "500g boneless chicken, cubed",
+      "1 cup yogurt",
+      "2 tbsp tikka masala spice",
+      "3 tbsp butter",
+      "1 onion, diced",
+      "3 cloves garlic, minced",
+      "1 tbsp ginger, grated",
+      "400g crushed tomatoes",
+      "1 cup heavy cream",
+      "Fresh cilantro for garnish"
+    ],
+    "instructions": [
+      "Marinate chicken in yogurt and half the tikka masala spice for at least 1 hour.",
+      "Grill or pan-fry chicken until cooked through. Set aside.",
+      "In a large pan, melt butter and sauté onion until soft.",
+      "Add garlic, ginger, and remaining spices. Cook for 1 minute.",
+      "Add crushed tomatoes and simmer for 10 minutes.",
+      "Stir in cream and add cooked chicken.",
+      "Simmer for 5 minutes. Garnish with cilantro and serve with rice or naan."
+    ]
+  },
+  {
+    "id": 3,
+    "title": "Caesar Salad",
+    "summary": "A green salad of romaine lettuce and croutons dressed with lemon juice, olive oil, egg, Worcestershire sauce, anchovies, garlic, Dijon mustard, Parmesan cheese, and black pepper.",
+    "image": "https://via.placeholder.com/150",
+    "ingredients": [
+      "1 large romaine lettuce head",
+      "1 cup croutons",
+      "1/2 cup Parmesan cheese, shaved",
+      "2 cloves garlic",
+      "2 anchovy fillets",
+      "1 egg yolk",
+      "2 tbsp lemon juice",
+      "1 tsp Dijon mustard",
+      "1/2 cup olive oil",
+      "Worcestershire sauce to taste"
+    ],
+    "instructions": [
+      "Wash and chop romaine lettuce into bite-sized pieces.",
+      "In a blender, combine garlic, anchovies, egg yolk, lemon juice, and mustard.",
+      "Slowly drizzle in olive oil while blending until emulsified.",
+      "Add Worcestershire sauce and season with salt and pepper.",
+      "Toss lettuce with dressing until well coated.",
+      "Top with croutons and Parmesan shavings. Serve immediately."
+    ]
+  },
+  {
+    "id": 4,
+    "title": "Chocolate Chip Cookies",
+    "summary": "Delicious homemade cookies with chocolate chips, perfect for any occasion.",
+    "image": "https://via.placeholder.com/150",
+    "ingredients": [
+      "2 1/4 cups all-purpose flour",
+      "1 tsp baking soda",
+      "1 tsp salt",
+      "1 cup butter, softened",
+      "3/4 cup granulated sugar",
+      "3/4 cup brown sugar",
+      "2 large eggs",
+      "2 tsp vanilla extract",
+      "2 cups chocolate chips"
+    ],
+    "instructions": [
+      "Preheat oven to 375°F (190°C).",
+      "Mix flour, baking soda, and salt in a bowl.",
+      "In another bowl, cream together butter and both sugars until fluffy.",
+      "Beat in eggs and vanilla extract.",
+      "Gradually stir in flour mixture.",
+      "Fold in chocolate chips.",
+      "Drop rounded tablespoons of dough onto baking sheets.",
+      "Bake for 9-11 minutes until golden brown.",
+      "Cool on baking sheet for 2 minutes, then transfer to wire rack."
+    ]
   }
 ]
